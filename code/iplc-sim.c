@@ -5,6 +5,7 @@
 /***********************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
@@ -39,11 +40,17 @@ void iplc_sim_finalize();
 
 typedef struct cache_line
 {
+
+   
+
     // Your data structures for implementing your cache should include:
     // a valid bit
     // a tag
     // a method for handling varying levels of associativity
     // a method for selecting which item in the cache is going to be replaced
+    bool validBit;
+    int tag;
+
 } cache_line_t;
 
 cache_line_t *cache=NULL;
@@ -145,8 +152,7 @@ void iplc_sim_init(int index, int blocksize, int assoc)
     cache_assoc = assoc;
 
 
-    cache_blockoffsetbits =
-    (int) rint((log( (double) (blocksize * 4) )/ log(2)));
+    cache_blockoffsetbits = (int) rint((log( (double) (blocksize * 4) )/ log(2)));
     /* Note: rint function rounds the result up prior to casting */
 
     cache_size = assoc * ( 1 << index ) * ((32 * blocksize) + 33 - index - cache_blockoffsetbits);
@@ -167,6 +173,14 @@ void iplc_sim_init(int index, int blocksize, int assoc)
 
     // Dynamically create our cache based on the information the user entered
     for (i = 0; i < (1<<index); i++) {
+        //allocate either 1, 2, or 4 spaces depending on assosiativity
+        //cache_blockoffsetbits
+        //                  total bits | offset that is ignored | index
+        int numberOfBits=   32         - cache_blockoffsetbits  - index
+        for(int j=0; j<assoc; j++){
+            cache[i] = malloc(pow(2, numberOfBits));
+        }
+        
     }
 
     // init the pipeline -- set all data to zero and instructions to NOP
