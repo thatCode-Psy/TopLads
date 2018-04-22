@@ -48,7 +48,7 @@ typedef struct cache_line
     // a tag
     // a method for handling varying levels of associativity
     // a method for selecting which item in the cache is going to be replaced
-    bool validBit;
+    int validBit;
     int tag;
 
 } cache_line_t;
@@ -169,6 +169,7 @@ void iplc_sim_init(int index, int blocksize, int assoc)
         exit(-1);
     }
 
+    //allocates each slot in the cache to the struct cache_line_t
     cache = (cache_line_t *) malloc((sizeof(cache_line_t) * 1<<index));
 
     // Dynamically create our cache based on the information the user entered
@@ -176,10 +177,9 @@ void iplc_sim_init(int index, int blocksize, int assoc)
         //allocate either 1, 2, or 4 spaces depending on assosiativity
         //cache_blockoffsetbits
         //                  total bits | offset that is ignored | index
-        int numberOfBits=   32         - cache_blockoffsetbits  - index
-        for(int j=0; j<assoc; j++){
-            cache[i] = malloc(pow(2, numberOfBits));
-        }
+        int numberOfBits=   32         - cache_blockoffsetbits  - index;
+        cache[i].tag=numberOfBits;
+        cache[i].validBit=0;
         
     }
 
