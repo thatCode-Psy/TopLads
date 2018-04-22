@@ -48,8 +48,10 @@ typedef struct cache_line
     // a tag
     // a method for handling varying levels of associativity
     // a method for selecting which item in the cache is going to be replaced
-    int validBit;
-    int tag;
+    int *validBit;
+    //tag is a number between 0 - 2^(31-offset-index)
+    //index bits = log2(cachesize (2^11*10) - 2^offset)
+    int *tag ;
 
 } cache_line_t;
 
@@ -177,9 +179,13 @@ void iplc_sim_init(int index, int blocksize, int assoc)
         //allocate either 1, 2, or 4 spaces depending on assosiativity
         //cache_blockoffsetbits
         //                  total bits | offset that is ignored | index
-        int numberOfBits=   32         - cache_blockoffsetbits  - index;
-        cache[i].tag=numberOfBits;
-        cache[i].validBit=0;
+        //int numberOfBits=   31        - cache_blockoffsetbits  - index;
+        //index is how many blocks we are going to have in our cache
+        //each block size should be the tag (Instuction length - offset - index) = 31 - offset - index= tag bits long + 1 bit 
+        cache[i].tag= malloc(pow(2, 31- cache_blockoffsetbits- index));
+        cache[i].validBit= malloc(1);
+        
+        
         
     }
 
@@ -196,7 +202,9 @@ void iplc_sim_init(int index, int blocksize, int assoc)
  */
 void iplc_sim_LRU_replace_on_miss(int index, int tag)
 {
+
     /* You must implement this function */
+    
 }
 
 /*
@@ -442,7 +450,7 @@ void iplc_sim_parse_instruction(char *buffer)
         printf("INST HIT:\t Address 0x%x \n", instruction_address);
 
     // Parse the Instruction
-
+    //checks if the instructions are add, Shift left logical, or Bitwise or immediate
     if (strncmp( instruction, "add", 3 ) == 0 ||
         strncmp( instruction, "sll", 3 ) == 0 ||
         strncmp( instruction, "ori", 3 ) == 0) {
