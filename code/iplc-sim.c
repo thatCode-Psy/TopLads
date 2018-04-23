@@ -176,14 +176,32 @@ void iplc_sim_init(int index, int blocksize, int assoc)
 
     // Dynamically create our cache based on the information the user entered
     for (i = 0; i < (1<<index); i++) {
-        //allocate either 1, 2, or 4 spaces depending on assosiativity
-        //cache_blockoffsetbits
+        
+        //Cache Size (index), Blocksize and Level of Assoc
+        //2^(cache size)= how many bits are allocated for the cache
+        //2^(cache size)/blocksize = Cache lines
         //                  total bits | offset that is ignored | index
         //int numberOfBits=   31        - cache_blockoffsetbits  - index;
         //index is how many blocks we are going to have in our cache
         //each block size should be the tag (Instuction length - offset - index) = 31 - offset - index= tag bits long + 1 bit 
-        cache[i].tag= malloc(pow(2, 31- cache_blockoffsetbits- index));
-        cache[i].validBit= malloc(1);
+        
+        //offset= log2(bytes/word) (32, 64, or 128)
+        //                          5   6      7
+        //block offset= log2(words/line), 1, 2, 4
+        //index bits= log2((cache size/blocksize)/ associativity)
+        //CacheSize = Associativity * (2^{IndexBits} * (32 * BlockSize + 33 - IndexBits - BlockOffSetBits))
+        //tag is the rest
+
+        //32 bit example, 2 set assosiative, cache size of 3 bits
+        //cache size = 2  * (2^3 * 32 * 32 + 33 - 2 - 1) = log2(16444/32/2) = log2(256) = 8
+        // 31    14       6                      5             0
+        //  | tag | index | block or line offset | byte offset |
+
+        for(j=0; j<assoc; j++){
+
+        }
+        // cache[i].tag= malloc(pow(2, 31- cache_blockoffsetbits- index));
+        // cache[i].validBit= malloc(1);
         
         
         
@@ -204,7 +222,8 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
 {
 
     /* You must implement this function */
-    
+    cache[index].tag= tag;
+    cache[index].validBit=1;
 }
 
 /*
@@ -214,6 +233,7 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
 void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
 {
     /* You must implement this function */
+    
 }
 
 /*
