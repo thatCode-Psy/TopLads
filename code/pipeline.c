@@ -69,20 +69,50 @@ void iplc_sim_push_pipeline_stage()
     /* 3. Check for LW delays due to use in ALU stage and if data hit/miss
      *    add delay cycles if needed.
      */
+    int stalling = 0;//flag to skip normal push if pipeline needs to stall
     if (pipeline[MEM].itype == LW) {
         int inserted_nop = 0;
-        if(pipeline[ALU].itype == SW)//check if instruction in ALU is SW (means it is accessing memory)
+        //below if statements all do basically the same thing; however, different variable names means different if statements for each instruction
+        if(pipeline[ALU].itype == SW)//check if instruction in ALU is save word 
         {
-            if(pipeline[ALU].stage.sw.data_address == pipeline[MEM].stage.lw.data_address)//check if the memory being accessed is the same as tge LW in MEM
+            if(pipeline[ALU].stage.sw.src_reg == pipeline[MEM].stage.lw.dest_reg)//check if the source reg is the same as the destination reg for what's in MEM
             {
-                iplc_sim_process_pipeline_nop();
-                inserted_nop++;//if so, delay by adding an extra pipleine cycle
+                inserted_nop = 1//if so, flag that stall is needed
+            }
+        }
+        else if(pipeline[ALU].itype == BRANCH)//check if instruction in ALU is branch
+        {
+            if(pipeline[ALU].stage.branch.reg1 == pipeline[MEM].stage.lw.dest_reg
+                || pipeline[ALU].stage.branch.reg2 == pipeline[MEM].stage.lw.dest_reg)//check if either reg for branch comparison is dest reg for instruction in MEM
+            {
+                inserted_nop = 1//if so, flag that stall is needed
+            }
+        }
+        else if(pipeline[ALU].itype == RTYPE)//check if instruction in ALU is rtype
+        {
+            if(pipeline[ALU].stage.rtype.reg1 == pipeline[MEM].stage.lw.dest_reg
+                || pipeline[ALU].stage.rtype.reg2_or_constant == pipeline[MEM].stage.lw.dest_reg)//check if either non-dest reg for operation is dest reg for instruction in MEM
+            {
+                inserted_nop = 1//if so, flag that stall is needed
+            }
+        }
+        else if(pipeline[ALU].itype == LW)//check if instruction in ALU is load word
+        {
+            if(pipeline[ALU].stage.lw.base_reg == pipeline[MEM].stage.lw.dest_reg)//check if the source reg is the same as the destination reg for what's in MEM
+            {
+                inserted_nop = 1//if so, flag that stall is needed
             }
         }
         if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0)//check if the adress is a miss
             pipeline_cycles += 10;//if so, add 10 to cycles for the stall penalty
 
-        //pipeline_cycles += inserted_nop;
+        if(inserted_nop == 1)
+        {
+            pipeline[WRITEBACK] = pipeline[MEM];//push what's in MEM to WB
+            pipeline[MEM].itype = NOP;//Make MEM stage instruction for nex cycle NOP
+            //Leave other instructions unchanged
+            stalling = 1; //update flag
+        }
 
     }
     
@@ -93,10 +123,13 @@ void iplc_sim_push_pipeline_stage()
     /* 5. Increment pipe_cycles 1 cycle for normal processing */
     pipeline_cycles++;
     /* 6. push stages thru MEM->WB, ALU->MEM, DECODE->ALU, FETCH->ALU */
-    pipeline[WRITEBACK] = pipeline[MEM];
-    pipeline[MEM] = pipeline[ALU];
-    pipeline[ALU] = pipeline[DECODE];
-    pipeline[DECODE] = pipeline[FETCH];
+    if(stalling == 0)
+    {   
+        pipeline[WRITEBACK] = pipeline[MEM];
+        pipeline[MEM] = pipeline[ALU];
+        pipeline[ALU] = pipeline[DECODE];
+        pipeline[DECODE] = pipeline[FETCH];
+    }
     // 7. This is a give'me -- Reset the FETCH stage to NOP via bezero */
     bzero(&(pipeline[FETCH]), sizeof(pipeline_t));
 }
