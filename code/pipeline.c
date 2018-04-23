@@ -60,6 +60,19 @@ void iplc_sim_push_pipeline_stage()
      */
     if (pipeline[MEM].itype == LW) {
         int inserted_nop = 0;
+        if(pipeline[ALU].itype == SW)//check if instruction in ALU is SW (means it is accessing memory)
+        {
+            if(pipeline[ALU].stage.sw.data_address == pipeline[MEM].stage.lw.data_address)//check if the memory being accessed is the same as tge LW in MEM
+            {
+                iplc_sim_process_pipeline_nop();
+                inserted_nop++;//if so, delay by adding an extra pipleine cycle
+            }
+        }
+        if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0)//check if the adress is a miss
+            pipeline_cycles += 10;//if so, add 10 to cycles for the stall penalty
+
+        //pipeline_cycles += inserted_nop;
+
     }
     
     /* 4. Check for SW mem acess and data miss .. add delay cycles if needed */
