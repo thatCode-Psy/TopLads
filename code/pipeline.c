@@ -101,35 +101,44 @@ void iplc_sim_process_pipeline_lw(int dest_reg, int base_reg, unsigned int data_
 	iplc_sim_push_pipeline_stage();
 	
 	pipeline[FETCH].itype = LW;
-	
 }
 
 void iplc_sim_process_pipeline_sw(int src_reg, int base_reg, unsigned int data_address)
 {
     /* You must implement this function */
 	iplc_sim_push_pipeline_stage();
+	
+	pipeline[FETCH].itype = SW;
 }
 
 void iplc_sim_process_pipeline_branch(int reg1, int reg2)
 {
     /* You must implement this function */
 	iplc_sim_push_pipeline_stage();
+	
+	pipeline[FETCH].itype = BRANCH;
 }
 
 void iplc_sim_process_pipeline_jump(char *instruction)
 {
     /* You must implement this function */
 	iplc_sim_push_pipeline_stage();
+	
+	pipeline[FETCH].itype = JUMP;
 }
 
 void iplc_sim_process_pipeline_syscall()
 {
     /* You must implement this function */
 	iplc_sim_push_pipeline_stage();
+	
+	pipeline[FETCH].itype = SYSCALL;
 }
 
 void iplc_sim_process_pipeline_nop()
 {
     /* You must implement this function */
 	iplc_sim_push_pipeline_stage();
+	
+	pipeline[FETCH].itype = NOP;
 }
