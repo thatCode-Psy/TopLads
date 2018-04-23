@@ -53,10 +53,16 @@ void iplc_sim_push_pipeline_stage()
     /* 2. Check for BRANCH and correct/incorrect Branch Prediction */
     if (pipeline[DECODE].itype == BRANCH) {
 		int branch_taken = 0;
-		if(branch_predict_taken) {
-			branch_taken = 1;
-		} else {
-			branch_taken = 0;
+		branch_count++;
+		if(pipeline[FETCH].instruction_address) { // Not NOP in FETCH
+			if(!(pipeline[FETCH].instruction_address - pipeline[DECODE].instruction_address == 4)) { //check if branch taken
+				branch_taken = 1;
+			}
+			if(branch_predict_taken == branch_taken) { //branch predicted correctly
+				correct_branch_predictions++;
+			} else { //branch predicted incorrectly  TODO:
+				//push pipeline forward and insert NOP
+			}
 		}
     }
     
