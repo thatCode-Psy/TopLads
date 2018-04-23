@@ -52,7 +52,12 @@ void iplc_sim_push_pipeline_stage()
     
     /* 2. Check for BRANCH and correct/incorrect Branch Prediction */
     if (pipeline[DECODE].itype == BRANCH) {
-        int branch_taken = 0;
+		int branch_taken = 0;
+		if(branch_predict_taken) {
+			branch_taken = 1;
+		} else {
+			branch_taken = 0;
+		}
     }
     
     /* 3. Check for LW delays due to use in ALU stage and if data hit/miss
