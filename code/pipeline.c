@@ -106,7 +106,7 @@ void iplc_sim_push_pipeline_stage()
             }
         }
         if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0)//check if the adress is a miss
-            pipeline_cycles += 10;//if so, add 10 to cycles for the stall penalty
+            pipeline_cycles += CACHE_MISS_DELAY;//if so, add 10 to cycles for the stall penalty
 
         if(inserted_nop == 1)
         {
@@ -121,7 +121,7 @@ void iplc_sim_push_pipeline_stage()
     /* 4. Check for SW mem acess and data miss .. add delay cycles if needed */
     if (pipeline[MEM].itype == SW) {
 		if(iplc_sim_trap_address(pipeline[MEM].stage.sw.data_address) == 0) 
-			pipeline_cycles += 10;
+			pipeline_cycles += CACHE_MISS_DELAY;
     }
     
     /* 5. Increment pipe_cycles 1 cycle for normal processing */
