@@ -177,25 +177,7 @@ void iplc_sim_init(int index, int blocksize, int assoc)
     // Dynamically create our cache based on the information the user entered
     for (i = 0; i < (1<<index); i++) {
         
-        //Cache Size (index), Blocksize and Level of Assoc
-        //2^(cache size)= how many bits are allocated for the cache
-        //2^(cache size)/blocksize = Cache lines
-        //                  total bits | offset that is ignored | index
-        //index is how many blocks we are going to have in our cache
-        //each block size should be the tag (Instuction length - offset - index) = 31 - offset - index= tag bits long + 1 bit 
         
-        //offset= log2(bytes/word) (32, 64, or 128)
-        //                          5   6      7
-        //block offset= log2(words/line), 1, 2, 4
-        //index bits= log2((cache size/blocksize)/ associativity)
-        //CacheSize = Associativity * (2^{IndexBits} * (32 * BlockSize + 33 - IndexBits - BlockOffSetBits))
-        //tag is the rest
-
-        //example
-        //32 bit, 2 set assosiative, cache size of 2^3 = 8
-        //cache size = 2  * (2^3 * 32 * 32 + 33 - 2 - 1) = log2(16444/32/2) = log2(256) = 8
-        // 31    14       6                      5             0
-        //  | tag | index | block or line offset | byte offset |
 
         //array of all of the tags in the cache
         cache[i].tag= (int *)malloc(sizeof(int), assoc);
@@ -279,9 +261,32 @@ int iplc_sim_trap_address(unsigned int address)
     int hit=0;
 
     // Call the appropriate function for a miss or hit
+    //Cache Size (index), Blocksize and Level of Assoc
+    //2^(cache size)= how many bits are allocated for the cache
+    //2^(cache size)/blocksize = Cache lines
+    //                  total bits | offset that is ignored | index
+    //index is how many blocks we are going to have in our cache
+    //each block size should be the tag (Instuction length - offset - index) = 31 - offset - index= tag bits long + 1 bit 
+    
+    //offset= log2(bytes/word) (32, 64, or 128)
+    //                          5   6      7
+    //block offset= log2(words/line), 1, 2, 4
+    //index bits= log2((cache size/blocksize)/ associativity)
+    //CacheSize = Associativity * (2^{IndexBits} * (32 * BlockSize + 33 - IndexBits - BlockOffSetBits))
+    //tag is the rest
+
+    //example
+    //32 bit, 2 set assosiative, cache size of 2^3 = 8
+    //cache size = 2  * (2^3 * 32 * 32 + 33 - 2 - 1) = log2(16444/32/2) = log2(256) = 8
+    // 31    14       6                      5             0
+    //  | tag | index | block or line offset | byte offset |
+    int index;
+
+    int byteOffet= (log(cache_blocksize)/log(2));
+    address>>byteOffet;
 
     //need to determine the index from the address using math B)
-
+    index= 
     /* expects you to return 1 for hit, 0 for miss */
     return hit;
 }
