@@ -256,9 +256,7 @@ void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
  */
 int iplc_sim_trap_address(unsigned int address)
 {
-    int i=0, index=0;
-    int tag=0;
-    int hit=0;
+    
 
     // Call the appropriate function for a miss or hit
     //Cache Size (index), Blocksize and Level of Assoc
@@ -271,7 +269,7 @@ int iplc_sim_trap_address(unsigned int address)
     //offset= log2(bytes/word) (32, 64, or 128)
     //                          5   6      7
     //block offset= log2(words/line), 1, 2, 4
-    //index bits= log2((cache size/blocksize)/ associativity)
+    //index bits= log2((cache size/blocksize))
     //CacheSize = Associativity * (2^{IndexBits} * (32 * BlockSize + 33 - IndexBits - BlockOffSetBits))
     //tag is the rest
 
@@ -283,10 +281,26 @@ int iplc_sim_trap_address(unsigned int address)
     int index;
 
     int byteOffet= (log(cache_blocksize)/log(2));
-    address>>byteOffet;
-
+    int indexBits = log2((cache size/blocksize))
+    index= (address>>byteOffet)%pow(2, indexBits);
+    int tag = address>>(byteOffet+indexBits)
     //need to determine the index from the address using math B)
-    index= 
+    int i;
+    int valueHit=0;
+    for(i=0; i<assoc; i++){
+        if(cache[index].tag[i]==tag){
+            iplc_sim_LRU_update_on_hit(index, i);
+            valueHit=1;
+            hit=1;
+            break;
+        }
+       
+    }
+    if(!valueHit){
+        iplc_sim_LRU_replace_on_miss(index, tag);
+    }
+    
+    
     /* expects you to return 1 for hit, 0 for miss */
     return hit;
 }
