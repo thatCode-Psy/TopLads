@@ -180,8 +180,8 @@ void iplc_sim_init(int index, int blocksize, int assoc)
         
 
         //array of all of the tags in the cache
-        cache[i].tag= (int *)malloc(sizeof(int), assoc);
-        cache[i].validBit= (int *)malloc(sizeof(int), assoc);
+        cache[i].tag= (int *)calloc(sizeof(int), assoc);
+        cache[i].validBit= (int *)calloc(sizeof(int), assoc);
         
         
         
@@ -205,7 +205,7 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
 
     int i;
     int freeSpace=0;
-    for(i=0; i<assoc; i++){
+    for(i=0; i<cache_assoc; i++){
         //tries to find the first unitialized block
         if(cache[index].validBit[i]==0){
             //if it finds one then update the tag in that spot and set the valid bit to one!
@@ -218,10 +218,10 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
     //if all of the slots are filled with valid bits
     if(!freeSpace){
         //move everything down by 1, and set the last slot to the new value
-        for(i=0; i<assoc-1; i++){
-            cache[index].tag[i]= cache[index].tag[i+1]
+        for(i=0; i<cache_assoc-1; i++){
+            cache[index].tag[i]= cache[index].tag[i+1];
         }
-        cache[index].tag[assoc-1]=tag;
+        cache[index].tag[cache_assoc-1]=tag;
         // cache[index].validBit[assoc-1]=1;
     }
     
@@ -243,7 +243,7 @@ void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
     //initialized lines filled to be at least as many values of the index of the entry
     int linesFilled=assoc_entry;
     //loops through all the values after the value hit.
-    for(i=assoc_entry+1; i<assoc; i++){
+    for(i=assoc_entry+1; i<cache_assoc; i++){
         if(cache[index].validBit[i]==0){
             break;
         }
@@ -290,21 +290,22 @@ int iplc_sim_trap_address(unsigned int address)
     //  | tag | index | block or line offset | byte offset |
     int index;
 
-    int byteOffet = log(cache_blocksize)/log(2);
-    int indexBits = log(cache_size/cache_blocksize)/log(2);
-    index= (address>>byteOffet)%pow(2, indexBits);
-    int tag = address>>(byteOffet+indexBits)
+    int byteOffet = cache_blockoffsetbits;
+    int indexBits = cache_index;
+    index= (address>>byteOffet)%(int)pow(2, indexBits);
+    int tag = address>>(byteOffet+indexBits);
     //need to determine the index from the address using math B)
     int i;
     int valueHit=0;
-    for(i=0; i<assoc; i++){
+
+    for(i=0; i<cache_assoc; i++){
         if(cache[index].validBit[i]==0){
             break;
         }
         if(cache[index].tag[i]==tag){
             iplc_sim_LRU_update_on_hit(index, i);
             valueHit=1;
-            hit=1;
+            
             break;
         }
        
@@ -315,7 +316,7 @@ int iplc_sim_trap_address(unsigned int address)
     
     
     /* expects you to return 1 for hit, 0 for miss */
-    return hit;
+    return valueHit;
 }
 
 /*
@@ -396,7 +397,7 @@ void iplc_sim_push_pipeline_stage()
             printf("DEBUG: Retired Instruction at 0x%x, Type %d, at Time %u \n",
                    pipeline[WRITEBACK].instruction_address, pipeline[WRITEBACK].itype, pipeline_cycles);
     }
-    
+    int stalling = 0;//flag to skip normal push if pipeline needs to stall
     /* 2. Check for BRANCH and correct/incorrect Branch Prediction */
     if (pipeline[DECODE].itype == BRANCH) {
 		int branch_taken = 0; //taken or untaken
@@ -417,7 +418,7 @@ void iplc_sim_push_pipeline_stage()
     /* 3. Check for LW delays due to use in ALU stage and if data hit/miss
      *    add delay cycles if needed.
      */
-    int stalling = 0;//flag to skip normal push if pipeline needs to stall
+    
     if (pipeline[MEM].itype == LW) {
         int inserted_nop = 0;
         //below if statements all do basically the same thing; however, different variable names means different if statements for each instruction
@@ -425,7 +426,7 @@ void iplc_sim_push_pipeline_stage()
         {
             if(pipeline[ALU].stage.sw.src_reg == pipeline[MEM].stage.lw.dest_reg)//check if the source reg is the same as the destination reg for what's in MEM
             {
-                inserted_nop = 1//if so, flag that stall is needed
+                inserted_nop = 1;//if so, flag that stall is needed
             }
         }
         else if(pipeline[ALU].itype == BRANCH)//check if instruction in ALU is branch
@@ -433,7 +434,7 @@ void iplc_sim_push_pipeline_stage()
             if(pipeline[ALU].stage.branch.reg1 == pipeline[MEM].stage.lw.dest_reg
                 || pipeline[ALU].stage.branch.reg2 == pipeline[MEM].stage.lw.dest_reg)//check if either reg for branch comparison is dest reg for instruction in MEM
             {
-                inserted_nop = 1//if so, flag that stall is needed
+                inserted_nop = 1;//if so, flag that stall is needed
             }
         }
         else if(pipeline[ALU].itype == RTYPE)//check if instruction in ALU is rtype
@@ -441,14 +442,14 @@ void iplc_sim_push_pipeline_stage()
             if(pipeline[ALU].stage.rtype.reg1 == pipeline[MEM].stage.lw.dest_reg
                 || pipeline[ALU].stage.rtype.reg2_or_constant == pipeline[MEM].stage.lw.dest_reg)//check if either non-dest reg for operation is dest reg for instruction in MEM
             {
-                inserted_nop = 1//if so, flag that stall is needed
+                inserted_nop = 1;//if so, flag that stall is needed
             }
         }
         else if(pipeline[ALU].itype == LW)//check if instruction in ALU is load word
         {
             if(pipeline[ALU].stage.lw.base_reg == pipeline[MEM].stage.lw.dest_reg)//check if the source reg is the same as the destination reg for what's in MEM
             {
-                inserted_nop = 1//if so, flag that stall is needed
+                inserted_nop = 1;//if so, flag that stall is needed
             }
         }
         if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0){//check if the adress is a miss
@@ -490,6 +491,9 @@ void iplc_sim_push_pipeline_stage()
     }
     // 7. This is a give'me -- Reset the FETCH stage to NOP via bezero */
     bzero(&(pipeline[FETCH]), sizeof(pipeline_t));
+
+    if(debug)
+        printf("Pipeline cycles: \t %d\n",pipeline_cycles);
 }
 
 /*
