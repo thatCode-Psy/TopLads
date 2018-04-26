@@ -439,9 +439,12 @@ void iplc_sim_push_pipeline_stage()
                 inserted_nop = 1//if so, flag that stall is needed
             }
         }
-        if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0)//check if the adress is a miss
+        if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0){//check if the adress is a miss
+            printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
             pipeline_cycles += CACHE_MISS_DELAY;//if so, add 10 to cycles for the stall penalty
-
+        }else{
+            printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
+        }
         if(inserted_nop == 1)
         {
             pipeline[WRITEBACK] = pipeline[MEM];//push what's in MEM to WB
