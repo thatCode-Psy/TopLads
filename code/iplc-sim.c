@@ -305,12 +305,14 @@ int iplc_sim_trap_address(unsigned int address)
         if(cache[index].tag[i]==tag){
             iplc_sim_LRU_update_on_hit(index, i);
             valueHit=1;
-            
+            cache_hit++;
             break;
         }
        
     }
+    cache_access++;
     if(!valueHit){
+        cache_miss++;
         iplc_sim_LRU_replace_on_miss(index, tag);
     }
     
