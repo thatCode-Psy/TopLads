@@ -411,9 +411,8 @@ void iplc_sim_push_pipeline_stage()
 			if(branch_predict_taken == branch_taken) { //branch predicted correctly
 				correct_branch_predictions++;
 			} else { 
-
+                pipeline_cycles++;
 				pipeline[WRITEBACK] = pipeline[MEM];
-                // pipeline[MEM].itype = NOP;
                 pipeline[MEM] = pipeline[ALU];
                 pipeline[ALU] = pipeline[DECODE];
                 pipeline[DECODE].itype = NOP;
@@ -461,7 +460,7 @@ void iplc_sim_push_pipeline_stage()
         }
         if(iplc_sim_trap_address(pipeline[MEM].stage.lw.data_address) == 0){//check if the adress is a miss
             printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
-            pipeline_cycles += CACHE_MISS_DELAY;//if so, add 10 to cycles for the stall penalty
+            pipeline_cycles += CACHE_MISS_DELAY - 1;//if so, add 10 to cycles for the stall penalty
         }else{
             printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
         }
@@ -470,6 +469,8 @@ void iplc_sim_push_pipeline_stage()
             pipeline[WRITEBACK] = pipeline[MEM];//push what's in MEM to WB
             pipeline[MEM].itype = NOP;//Make MEM stage instruction for nex cycle NOP
             //Leave other instructions unchanged
+            //pipeline_cycles++;
+            instruction_count--;
             stalling = 1; //update flag
         }
 
@@ -479,7 +480,7 @@ void iplc_sim_push_pipeline_stage()
     if (pipeline[MEM].itype == SW) {
 		if(iplc_sim_trap_address(pipeline[MEM].stage.sw.data_address) == 0){
             printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
-			pipeline_cycles += CACHE_MISS_DELAY;
+			pipeline_cycles += CACHE_MISS_DELAY - 1;
         }else{
             printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
         }
