@@ -394,10 +394,9 @@ void iplc_sim_push_pipeline_stage()
 			}
 			if(branch_predict_taken == branch_taken) { //branch predicted correctly
 				correct_branch_predictions++;
-			} else { //branch predicted incorrectly  TODO:
-				//push pipeline forward and insert NOP
-				//add miss or not? ??
-				iplc_sim_process_pipeline_nop();
+			} else { 
+				pipeline[WRITEBACK] = pipeline[MEM];
+				stalling = 1;
 			}
 		}
     }
