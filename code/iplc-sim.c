@@ -316,7 +316,7 @@ int iplc_sim_trap_address(unsigned int address)
         iplc_sim_LRU_replace_on_miss(index, tag);
     }
     
-    
+    printf("Address %x: Tag= %x, Index= %x\n", address, tag, index);
     /* expects you to return 1 for hit, 0 for miss */
     return valueHit;
 }
@@ -411,7 +411,12 @@ void iplc_sim_push_pipeline_stage()
 			if(branch_predict_taken == branch_taken) { //branch predicted correctly
 				correct_branch_predictions++;
 			} else { 
+
 				pipeline[WRITEBACK] = pipeline[MEM];
+                // pipeline[MEM].itype = NOP;
+                pipeline[MEM] = pipeline[ALU];
+                pipeline[ALU] = pipeline[DECODE];
+                pipeline[DECODE].itype = NOP;
 				stalling = 1;
 			}
 		}
