@@ -51,7 +51,7 @@ typedef struct cache_line
     int *validBit;
     //tag is a number between 0 - 2^(31-offset-index)
     //index bits = log2(cachesize (2^11*10) - 2^offset)
-    int *tag ;
+    int *tag;
 
 } cache_line_t;
 
@@ -206,14 +206,18 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
     int i;
     int freeSpace=0;
     for(i=0; i<assoc; i++){
-        if(cache[index][i].validBit==0){
+        //tries to find the first unitialized block
+        if(cache[index].validBit[i]==0){
+            //if it finds one then update the tag in that spot and set the valid bit to one!
             cache[index].tag[i] = tag;
             cache[index].validBit[i]= 1;
             freeSpace=1;
             break;
         }
     }
+    //if all of the slots are filled with valid bits
     if(!freeSpace){
+        //move everything down by 1, and set the last slot to the new value
         for(i=0; i<assoc-1; i++){
             cache[index].tag[i]= cache[index].tag[i+1]
         }
@@ -234,16 +238,22 @@ void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
     //assoc entry is the index that it found a hit at!!
     //hopefully assoc_entry indexes the cache starting at 0
     int i;
+    //the tag that it hit for
     int hitTag = cache[index].tag[assoc_entry];
+    //initialized lines filled to be at least as many values of the index of the entry
     int linesFilled=assoc_entry;
+    //loops through all the values after the value hit.
     for(i=assoc_entry+1; i<assoc; i++){
         if(cache[index].validBit[i]==0){
             break;
         }
+        //increment the amount of values used
         linesFilled++;
+        //move them all down by 1
         cache[index].tag[i-1]=cache[index].tag[i];
     }
 
+    //sets the tag of the amount of lines filled to hit tag
     cache[index].tag[linesFilled]=hitTag;
     
 }
@@ -280,14 +290,17 @@ int iplc_sim_trap_address(unsigned int address)
     //  | tag | index | block or line offset | byte offset |
     int index;
 
-    int byteOffet= (log(cache_blocksize)/log(2));
-    int indexBits = log2((cache size/blocksize))
+    int byteOffet = log(cache_blocksize)/log(2);
+    int indexBits = log(cache_size/cache_blocksize)/log(2);
     index= (address>>byteOffet)%pow(2, indexBits);
     int tag = address>>(byteOffet+indexBits)
     //need to determine the index from the address using math B)
     int i;
     int valueHit=0;
     for(i=0; i<assoc; i++){
+        if(cache[index].validBit[i]==0){
+            break;
+        }
         if(cache[index].tag[i]==tag){
             iplc_sim_LRU_update_on_hit(index, i);
             valueHit=1;
