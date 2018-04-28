@@ -335,6 +335,13 @@ void iplc_sim_finalize()
         iplc_sim_push_pipeline_stage();
     }
 
+    for(int i=0;i < (1<<cache_index); i++) {
+        free(cache[i].tag);
+        free(cache[i].validBit);
+    }
+
+    free(cache);
+
     printf(" Cache Performance \n");
     printf("\t Number of Cache Accesses is %ld \n", cache_access);
     printf("\t Number of Cache Misses is %ld \n", cache_miss);
