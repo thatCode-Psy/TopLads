@@ -417,13 +417,13 @@ void iplc_sim_push_pipeline_stage()
 			}
 			if(branch_predict_taken == branch_taken) { //branch predicted correctly
 				correct_branch_predictions++;
-			} else {
+			} else { //branch not predicted correctly, push forward and insert nop
 				pipeline[WRITEBACK] = pipeline[MEM];
                 pipeline[MEM] = pipeline[ALU];
                 pipeline[ALU] = pipeline[DECODE];
                 pipeline[DECODE].itype = NOP;
                 pipeline[DECODE].instruction_address = 0;
-        iplc_sim_push_pipeline_stage();
+        iplc_sim_push_pipeline_stage(); //run another to resolve this nop
 				stalling = 1;
 			}
 		}
@@ -486,11 +486,11 @@ void iplc_sim_push_pipeline_stage()
 
     /* 4. Check for SW mem acess and data miss .. add delay cycles if needed */
     if (pipeline[MEM].itype == SW) {
-		if(iplc_sim_trap_address(pipeline[MEM].stage.sw.data_address) == 0){
+		if(iplc_sim_trap_address(pipeline[MEM].stage.sw.data_address) == 0){ //check that data is hit
             printf("DATA MISS:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
-			pipeline_cycles += CACHE_MISS_DELAY - 1;
+			pipeline_cycles += CACHE_MISS_DELAY - 1; //data miss
         }else{
-            printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address);
+            printf("DATA HIT:\t Address 0x%x \n", pipeline[MEM].stage.lw.data_address); //data hit
         }
 
     }
