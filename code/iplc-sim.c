@@ -180,6 +180,7 @@ void iplc_sim_init(int index, int blocksize, int assoc)
 
 
         //array of all of the tags in the cache
+        //Each cache line has 2 pointers, one for all of the tags, and one for all of the valid bits
         cache[i].tag= (int *)calloc(sizeof(int), assoc);
         cache[i].validBit= (int *)calloc(sizeof(int), assoc);
 
@@ -204,6 +205,7 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
 {
 
     int i;
+    //flag that is turned to 1 if it finds a blank space to put a value.
     int freeSpace=0;
     for(i=0; i<cache_assoc; i++){
         //tries to find the first unitialized block
@@ -221,8 +223,8 @@ void iplc_sim_LRU_replace_on_miss(int index, int tag)
         for(i=0; i<cache_assoc-1; i++){
             cache[index].tag[i]= cache[index].tag[i+1];
         }
+        //set the last cache slot to the new value
         cache[index].tag[cache_assoc-1]=tag;
-        // cache[index].validBit[assoc-1]=1;
     }
 
 }
@@ -235,8 +237,8 @@ void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
 {
 
     /* You must implement this function */
+
     //assoc entry is the index that it found a hit at!!
-    //hopefully assoc_entry indexes the cache starting at 0
     int i;
     //the tag that it hit for
     int hitTag = cache[index].tag[assoc_entry];
@@ -244,10 +246,11 @@ void iplc_sim_LRU_update_on_hit(int index, int assoc_entry)
     int linesFilled=assoc_entry;
     //loops through all the values after the value hit.
     for(i=assoc_entry+1; i<cache_assoc; i++){
+        //if it finds a bit that is not initialized then you are done
         if(cache[index].validBit[i]==0){
             break;
         }
-        //increment the amount of values used
+        //increment the amount of values used that are already in the cache block
         linesFilled++;
         //move them all down by 1
         cache[index].tag[i-1]=cache[index].tag[i];
@@ -272,27 +275,41 @@ int iplc_sim_trap_address(unsigned int address)
     //Cache Size (index), Blocksize and Level of Assoc
     //2^(cache size)= how many bits are allocated for the cache
     //2^(cache size)/blocksize = Cache lines
-    //                  total bits | offset that is ignored | index
+
     //index is how many blocks we are going to have in our cache
     //each block size should be the tag (Instuction length - offset - index) = 31 - offset - index= tag bits long + 1 bit
 
     //offset= log2(bytes/word) (32, 64, or 128)
     //                          5   6      7
-    //block offset= log2(words/line), 1, 2, 4
+    
     //index bits= log2((cache size/blocksize))
     //CacheSize = Associativity * (2^{IndexBits} * (32 * BlockSize + 33 - IndexBits - BlockOffSetBits))
-    //tag is the rest
+    //tag is the remainder
 
     //example
     //32 bit, 2 set assosiative, cache size of 2^3 = 8
     //cache size = 2  * (2^3 * 32 * 32 + 33 - 2 - 1) = log2(16444/32/2) = log2(256) = 8
     // 31    14       6                      5             0
-    //  | tag | index | block or line offset | byte offset |
+    //  | tag | index | byte offset |
+
+    //      log2((cache size/blocksize))                0
+    // 32                |            log2(bytes/word)  |
+    // |                 |                    |         |
+    // v                 v                    v         v
+    // --------------------------------------------------
+    // |                 |                    |         |
+    // |     TAG         |       index        | offset  |
+    // |                 |                    |         |
+    // --------------------------------------------------
+
+
     int index;
 
     int byteOffet = cache_blockoffsetbits;
     int indexBits = cache_index;
+
     index= (address>>byteOffet)%(int)pow(2, indexBits);
+    
     int tag = address>>(byteOffet+indexBits);
     //need to determine the index from the address using math B)
     int i;
