@@ -334,7 +334,7 @@ void iplc_sim_finalize()
            pipeline[WRITEBACK].itype != NOP) {
         iplc_sim_push_pipeline_stage();
     }
-
+    //Free the memory being used by the cache
     for(int i=0;i < (1<<cache_index); i++) {
         free(cache[i].tag);
         free(cache[i].validBit);
